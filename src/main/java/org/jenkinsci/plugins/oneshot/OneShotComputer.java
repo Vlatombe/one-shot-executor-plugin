@@ -90,4 +90,10 @@ public class OneShotComputer<S extends OneShotSlave> extends SlaveComputer {
      */
     protected void terminate(TaskListener listener) throws Exception {
     }
+
+    @Override
+    public Charset getDefaultCharset() {
+        Charset defaultCharset = super.getDefaultCharset();
+        return defaultCharset == null ? slave.getCharset() : defaultCharset;
+    }
 }

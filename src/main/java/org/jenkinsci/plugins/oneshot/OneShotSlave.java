@@ -88,6 +88,8 @@ public class OneShotSlave extends Slave implements EphemeralNode {
 
     private String taskName;
 
+    private OneShotExecutorProvisioningError launchFailure;
+
     /**
      * @param queueItem
      *        The {@link Queue.Item} this slave is assigned to
@@ -193,7 +195,7 @@ public class OneShotSlave extends Slave implements EphemeralNode {
                     LOGGER.log(Level.WARNING, "Failed to filter log with " + f, e);
                 }
             }
-            listener = new StreamTaskListener(os, Charset.forName(charset));
+            listener = new StreamTaskListener(os, getCharset());
         } catch (FileNotFoundException e) {
             throw new OneShotExecutorProvisioningError(e);
         }
@@ -234,7 +236,9 @@ public class OneShotSlave extends Slave implements EphemeralNode {
         } catch (Exception e) {
             if (executable instanceof Run)
                 ((Run)executable).setResult(Result.NOT_BUILT);
-            throw new OneShotExecutorProvisioningError(e);
+
+            this.launchFailure = new OneShotExecutorProvisioningError(e);
+            throw launchFailure;
         }
     }
 
@@ -244,6 +248,9 @@ public class OneShotSlave extends Slave implements EphemeralNode {
      */
     @Override
     public Launcher createLauncher(TaskListener listener) {
+        if (launchFailure != null) {
+            throw launchFailure;
+        }
         setExecutable();
 
         return super.createLauncher(listener);
@@ -266,4 +273,8 @@ public class OneShotSlave extends Slave implements EphemeralNode {
     }
 
     private static final Logger LOGGER = Logger.getLogger(OneShotComputer.class.getName());
+
+    Charset getCharset() {
+        return Charset.forName(charset);
+    }
 }
